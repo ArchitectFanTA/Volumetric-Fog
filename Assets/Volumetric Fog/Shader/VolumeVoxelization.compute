@@ -4,7 +4,7 @@
 
 // #pragma enable_d3d11_debug_symbols
 #pragma only_renderers d3d11 playstation xboxone xboxseries vulkan metal switch
-
+#pragma enable_d3d11_debug_symbols
 #pragma kernel VolumeVoxelization
 
 #define GROUP_SIZE_1D     8
@@ -30,7 +30,7 @@ void FillVolumetricDensityBuffer(uint2 voxelCoord2D, JitteredRay ray)
     float t0 = DecodeLogarithmicDepthGeneralized(0, _VBufferDistanceDecodingParams);
     float de = _VBufferRcpSliceCount; // Log-encoded distance between slices
 
-    for (uint slice = 0; slice < _VBufferSliceCount; slice++)
+    for (uint slice = 0; slice < 128; slice++)
     {
         // uint3 voxelCoord = uint3(voxelCoord2D, slice + _VBufferSliceCount * unity_StereoEyeIndex);
         uint3 voxelCoord = uint3(voxelCoord2D, slice);
@@ -51,7 +51,7 @@ void FillVolumetricDensityBuffer(uint2 voxelCoord2D, JitteredRay ray)
         float3 voxelScattering = _HeightFogBaseScattering.xyz * heightMultiplier;
         float  voxelExtinction = _HeightFogBaseExtinction * heightMultiplier;
 
-        _VBufferDensity[voxelCoord] = float4(1, 1,1,1);
+        _VBufferDensity[voxelCoord] = float4(voxelScattering, voxelExtinction);
 
         t0 = t1;
     }
@@ -63,36 +63,46 @@ void VolumeVoxelization(uint3 dispatchThreadId : SV_DispatchThreadID,
                         uint2 groupThreadId    : SV_GroupThreadID)
 {
     // UNITY_XR_ASSIGN_VIEW_INDEX(dispatchThreadId.z);
-    // float3 F = GetViewForwardDir();
-    // float3 U = GetViewUpDir();
-    uint2 groupOffset = groupId * GROUP_SIZE_1D;
-    uint2 voxelCoord1  = groupOffset + groupThreadId;
-    //for (uint slice = 0; slice < 128; slice++)
-    //{
-        uint3 voxelCoord=uint3(voxelCoord1, 64);
-        _VBufferDensity[voxelCoord] = float4(1,1,1,1);
-    //}
-    // float2 centerCoord = voxelCoord + float2(0.5, 0.5);
-    //
-    // // Compute a ray direction s.t. ViewSpace(rayDirWS).z = 1.
-    // float3 rayDirWS       = mul(-float4(centerCoord, 1, 1), _VBufferCoordToViewDirWS).xyz;  // _VBufferCoordToViewDirWS[unity_StereoEyeIndex]
-    // float3 rightDirWS     = cross(rayDirWS, U);
-    // float  rcpLenRayDir   = rsqrt(dot(rayDirWS, rayDirWS));
-    // float  rcpLenRightDir = rsqrt(dot(rightDirWS, rightDirWS));
-    //
-    // JitteredRay ray;
-    // ray.originWS    = GetCurrentViewPosition();
-    // ray.centerDirWS = rayDirWS * rcpLenRayDir; // Normalize
-    //
-    // float FdotD = dot(F, ray.centerDirWS);
-    // float unitDistFaceSize = _VBufferUnitDepthTexelSpacing * FdotD * rcpLenRayDir;
-    //
-    // ray.xDirDerivWS = rightDirWS * (rcpLenRightDir * unitDistFaceSize); // Normalize & rescale
-    // ray.yDirDerivWS = cross(ray.xDirDerivWS, ray.centerDirWS); // Will have the length of 'unitDistFaceSize' by construction
-    // ray.jitterDirWS = ray.centerDirWS; // TODO
-    //
-    // // ApplyCameraRelativeXR(ray.originWS);
-    //
-    // FillVolumetricDensityBuffer(voxelCoord, ray);
-}
 
+    // Reminder: our voxels are sphere-capped right frustums (truncated right pyramids).
+    // The curvature of the front and back faces is quite gentle, so we can use
+    // the right frustum approximation (thus the front and the back faces are squares).
+    // Note, that since we still rely on the perspective camera model, pixels at the center
+    // of the screen correspond to larger solid angles than those at the edges.
+    // Basically, sizes of front and back faces depend on the XY coordinate.
+    // https://www.desmos.com/calculator/i3rkesvidk
+
+    float3 F = GetViewForwardDir();
+    float3 U = GetViewUpDir();
+
+    uint2 voxelCoord = dispatchThreadId.xy;
+    float2 centerCoord = voxelCoord + float2(0.5, 0.5);
+    
+    // for (uint slice = 0; slice < 128; slice++)
+    // {
+    //     uint3 voxelCoord = uint3(voxelCoord1, slice);
+    //     _VBufferDensity[voxelCoord] = float4(1,_VBufferSliceCount,1,1);
+    // }
+     int a=_VBufferSliceCount;
+    
+    // // Compute a ray direction s.t. ViewSpace(rayDirWS).z = 1.
+    float3 rayDirWS       = mul(-float4(centerCoord, 1, 1), _VBufferCoordToViewDirWS).xyz;  // _VBufferCoordToViewDirWS[unity_StereoEyeIndex]
+    float3 rightDirWS     = cross(rayDirWS, U);
+    float  rcpLenRayDir   = rsqrt(dot(rayDirWS, rayDirWS));
+    float  rcpLenRightDir = rsqrt(dot(rightDirWS, rightDirWS));
+    
+    JitteredRay ray;
+    ray.originWS    = GetCurrentViewPosition();
+    ray.centerDirWS = rayDirWS * rcpLenRayDir; // Normalize
+    
+    float FdotD = dot(F, ray.centerDirWS);
+    float unitDistFaceSize = _VBufferUnitDepthTexelSpacing * FdotD * rcpLenRayDir;
+    
+    ray.xDirDerivWS = rightDirWS * (rcpLenRightDir * unitDistFaceSize); // Normalize & rescale
+    ray.yDirDerivWS = cross(ray.xDirDerivWS, ray.centerDirWS); // Will have the length of 'unitDistFaceSize' by construction
+    ray.jitterDirWS = ray.centerDirWS; // TODO
+    
+    // ApplyCameraRelativeXR(ray.originWS);
+    
+    FillVolumetricDensityBuffer(voxelCoord, ray);
+}

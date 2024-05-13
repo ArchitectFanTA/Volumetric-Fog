@@ -70,17 +70,36 @@ namespace URPVolumetricFog
             // desc.dimension = TextureDimension.Tex2D;
             // desc.useDynamicScale = true;
             // desc.enableRandomWrite = true;
-            m_MaxZ8xBufferHandle = RTHandles.Alloc(Mathf.CeilToInt(Screen.width / 8),
-                Mathf.CeilToInt(Screen.height / 8), colorFormat: GraphicsFormat.R32_SFloat, dimension: TextureDimension.Tex2D,enableRandomWrite: true,
-                useDynamicScale: true, name: "MaxZ mask 8x");
-            m_MaxZBufferHandle = RTHandles.Alloc(Mathf.CeilToInt(Screen.width / 8), Mathf.CeilToInt(Screen.height / 8),colorFormat: GraphicsFormat.R32_SFloat,
-                dimension: TextureDimension.Tex2D, enableRandomWrite: true, useDynamicScale: true, name: "MaxZ mask");
-            m_DilatedMaxZBufferHandle = RTHandles.Alloc(Mathf.CeilToInt(Screen.width / 16),
-                Mathf.CeilToInt(Screen.height / 16), colorFormat: GraphicsFormat.R32_SFloat,dimension: TextureDimension.Tex2D, enableRandomWrite: true,
-                useDynamicScale: true, name: "Dilated MaxZ mask");
+            if (m_MaxZ8xBufferHandle==null)
+            {
+                m_MaxZ8xBufferHandle = RTHandles.Alloc(Mathf.CeilToInt(Screen.width / 8),
+                    Mathf.CeilToInt(Screen.height / 8), colorFormat: GraphicsFormat.R32_SFloat, dimension: TextureDimension.Tex2D,enableRandomWrite: true,
+                    useDynamicScale: true, name: "MaxZ mask 8x");
+            }
+            if (m_MaxZBufferHandle==null)
+            {
+                m_MaxZBufferHandle = RTHandles.Alloc(Mathf.CeilToInt(Screen.width / 8), Mathf.CeilToInt(Screen.height / 8),colorFormat: GraphicsFormat.R32_SFloat,
+                    dimension: TextureDimension.Tex2D, enableRandomWrite: true, useDynamicScale: true, name: "MaxZ mask");
+            }
+            
+            if (m_DilatedMaxZBufferHandle==null)
+            {
+                m_DilatedMaxZBufferHandle = RTHandles.Alloc(Mathf.CeilToInt(Screen.width / 16),
+                    Mathf.CeilToInt(Screen.height / 16), colorFormat: GraphicsFormat.R32_SFloat,dimension: TextureDimension.Tex2D, enableRandomWrite: true,
+                    useDynamicScale: true, name: "Dilated MaxZ mask");
+            }
+           
+        }
+
+        public static bool ReAllocateIfNeeded(ref RTHandle handle, int width, int height, int slices,
+            GraphicsFormat colorFormat, FilterMode filterMode, TextureWrapMode wrapMode, TextureDimension dimension,
+            bool enableRandomWrite, bool useDynamicScale)
+        {
+            return false;
         }
         public void Dispose()
         {
+            Debug.Log("11");
             m_MaxZ8xBufferHandle?.Release();
             m_MaxZBufferHandle?.Release();
             m_DilatedMaxZBufferHandle?.Release();
@@ -142,7 +161,9 @@ namespace URPVolumetricFog
         
         public override void OnCameraCleanup(CommandBuffer cmd)
         {
-            
+            // m_MaxZ8xBufferHandle?.Release();
+            // m_MaxZBufferHandle?.Release();
+            // m_DilatedMaxZBufferHandle?.Release();
             
         }
     }

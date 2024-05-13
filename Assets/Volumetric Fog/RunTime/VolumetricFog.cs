@@ -38,6 +38,7 @@ namespace URPVolumetricFog
         
         protected override void Dispose(bool disposing)
         {
+           
             m_GenerateMaxZForVolumtric.Dispose();
             m_VolumeVoxelization.Dispose();
         }

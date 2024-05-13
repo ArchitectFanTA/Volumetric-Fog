@@ -57,14 +57,18 @@ namespace URPVolumetricFog
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
             var vBufferViewportSize = m_VBufferParameters.viewportSize;
-            m_densityBuffer=RTHandles.Alloc(vBufferViewportSize.x,
-                vBufferViewportSize.y,slices:vBufferViewportSize.z, colorFormat: GraphicsFormat.R16G16B16A16_SFloat, dimension: TextureDimension.Tex3D,enableRandomWrite: true,
-                useDynamicScale: true, name: "_VBufferDensity");
+            if (m_densityBuffer == null)
+            {
+                m_densityBuffer=RTHandles.Alloc(vBufferViewportSize.x,
+                    vBufferViewportSize.y,slices:vBufferViewportSize.z, colorFormat: GraphicsFormat.R16G16B16A16_SFloat, dimension: TextureDimension.Tex3D,enableRandomWrite: true,
+                    useDynamicScale: true, name: "_VBufferDensity");
+            }
+           
             UpdateShaderVariableslVolumetrics(ref m_PassData.volumetricCB,renderingData.cameraData);
-            // ConstantBuffer.PushGlobal(cmd, m_PassData.volumetricCB, IDs._ShaderVariablesVolumetricLighting);
-            // cmd.SetGlobalMatrix(IDs._PixelCoordToViewDirWS, m_PixelCoordToViewDirWS);
+             ConstantBuffer.PushGlobal(cmd, m_PassData.volumetricCB, IDs.ShaderVariablesVolumetric);
+             cmd.SetGlobalMatrix(IDs._PixelCoordToViewDirWS, m_PixelCoordToViewDirWS);
             UpdateFogShaderVariables(ref m_PassData.m_FogCB);
-            //ConstantBuffer.PushGlobal(cmd, m_PassData.m_FogCB, IDs._ShaderVariablesFog);
+            ConstantBuffer.PushGlobal(cmd, m_PassData.m_FogCB, IDs._ShaderVariablesFog);
         }
         
         private void UpdateShaderVariableslVolumetrics(ref ShaderVariablesVolumetric cb, CameraData cameraData)
@@ -146,7 +150,8 @@ namespace URPVolumetricFog
 
                 
                 cmd.SetComputeTextureParam(cs, kernel, IDs._VBufferDensity, m_densityBuffer);
-                //cmd.DispatchCompute(cs, kernel, width, height, 1);
+                cmd.DispatchCompute(cs, kernel, width, height, 1);
+                
                 
             }
             context.ExecuteCommandBuffer(cmd);
@@ -155,12 +160,15 @@ namespace URPVolumetricFog
         
         public void Dispose()
         {
+            
             m_densityBuffer?.Release();
         }
 
         // Cleanup any allocated resources that were created during the execution of this render pass.
         public override void OnCameraCleanup(CommandBuffer cmd)
         {
+            
+            //m_densityBuffer?.Release();
         }
     }
 

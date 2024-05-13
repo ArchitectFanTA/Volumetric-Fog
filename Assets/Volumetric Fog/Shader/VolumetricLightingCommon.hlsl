@@ -35,27 +35,28 @@ CBUFFER_END
 #define _HeightFogBaseExtinction            _HeightFogParams.y
 #define _HeightFogExponents                 _HeightFogParams.zw
 
-CBUFFER_START(ShaderVariablesVolumetricLighting)
-    uint        _VolumetricFilteringEnabled;
-    uint        _VBufferHistoryIsValid;
-    uint        _VBufferSliceCount;
-    float       _VBufferAnisotropy;
-    float       _CornetteShanksConstant;
-    float       _VBufferVoxelSize;
-    float       _VBufferRcpSliceCount;
-    float       _VBufferUnitDepthTexelSpacing;
-    float       _VBufferScatteringIntensity;
-    float       _VBufferLocalScatteringIntensity;
-    float       _VBufferLastSliceDist;
-    float       _vbuffer_pad00_;
-    float4      _VBufferViewportSize;
-    float4      _VBufferLightingViewportScale;
-    float4      _VBufferLightingViewportLimit;
-    float4      _VBufferDistanceEncodingParams;
-    float4      _VBufferDistanceDecodingParams;
-    float4      _VBufferSampleOffset;
-    float4      _VLightingRTHandleScale;
-    float4x4    _VBufferCoordToViewDirWS;
+CBUFFER_START(ShaderVariablesVolumetric)
+float4x4    _VBufferCoordToViewDirWS;
+ uint         _VolumetricFilteringEnabled;
+ uint         _VBufferHistoryIsValid;
+ uint         _VBufferSliceCount;
+ float        _VBufferAnisotropy;
+ float        _CornetteShanksConstant;
+ float        _VBufferVoxelSize;
+ float        _VBufferRcpSliceCount;
+ float        _VBufferUnitDepthTexelSpacing;
+ float        _VBufferScatteringIntensity;
+ float        _VBufferLocalScatteringIntensity;
+ float        _VBufferLastSliceDist;
+ float        _vbuffer_pad00_;
+ float4      _VBufferSampleOffset;
+ float4      _VLightingRTHandleScale;
+ float4      _VBufferViewportSize;
+ float4      _VBufferLightingViewportScale;
+ float4      _VBufferLightingViewportLimit;
+ float4      _VBufferDistanceEncodingParams;
+ float4      _VBufferDistanceDecodingParams;
+
 CBUFFER_END
 
 CBUFFER_START(ShaderVariablesLocalVolume)

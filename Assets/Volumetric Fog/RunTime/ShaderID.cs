@@ -5,7 +5,7 @@ namespace URPVolumetricFog
     internal static class IDs
     {
         public readonly static int _ShaderVariablesFog = Shader.PropertyToID("ShaderVariablesFog");
-        public readonly static int _ShaderVariablesVolumetricLighting = Shader.PropertyToID("ShaderVariablesVolumetricLighting");
+        public readonly static int ShaderVariablesVolumetric = Shader.PropertyToID("ShaderVariablesVolumetric");
         public readonly static int _ShaderVariablesLocalVolume = Shader.PropertyToID("ShaderVariablesLocalVolume");
 
         // VBuffers
